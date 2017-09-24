@@ -4,7 +4,7 @@ REM To ask user if i want to start workspace
 CHOICE /M "Do you want to start workspace?" /t 10 /D y
 
 REM To read txt file with spaces in name line by line
-FOR /F "tokens=*" %%A IN ('TYPE "workspace_list.txt"') DO (
+FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
     REM Call label as function with read line as an argument
     CALL :start_with_delay %%A 
 )
@@ -36,9 +36,9 @@ SET status=NOT STARTED
 :print_and_exit
 REM Print status message
 IF [%2] == [] (
-    ECHO [%verb%] %1
+    ECHO [%status%] %1
 ) ELSE (
-    ECHO [%verb%] %1 with %~xn2
+    ECHO [%status%] %1 with %~xn2
 )
 REM Exit from lable-like function
 EXIT /B
