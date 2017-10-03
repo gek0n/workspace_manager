@@ -10,27 +10,29 @@ FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
 )
 REM Go to end of file (exit batch file)
 GOTO :EOF
-
+:try_found_app_process
+REM If app argument is present
+IF [%2] == [] (
+    REM search launched app without argument
+    (TASKLIST | FIND /I "%~xn1" 1>NUL) && EXIT /B 0
+) ELSE (
+    REM search launched app with that argument
+    ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~n2" 1>NUL) && EXIT /B 0
+)
+EXIT /B 1
 :start_with_delay
 REM Clear status variable
 SET status=
+REM Try find running process before starting
+(CALL :try_found_app_process %*) && (SET status=FOUND& GOTO :print_and_exit)
+REM If app is not found, try start it (only one time)
+START "" %1 %2
 REM Do cycle delaying 3 times while app trying to start
 FOR /L %%i IN (1,1,3) DO (
-    REM If app argument is present
-    IF [%2] == [] (
-        REM search launched app without argument
-        (TASKLIST | FIND /I "%~xn1" 1>NUL) && (SET status=FOUND& GOTO :print_and_exit)
-    ) ELSE (
-        REM search launched app with that argument
-        ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~n2" 1>NUL) && (SET status=FOUND& GOTO :print_and_exit)
-    )
-    REM If app is not found, try start it (only one time)
-    IF %%i == 1 (
-        SET status=START
-        START "" %1 %2
-    )
+    REM Try find starting process
+    (CALL :try_found_app_process %*) && (SET status=START& GOTO :print_and_exit)
     REM Wait 5 seconds without any output
-    TIMEOUT /T 5 /NOBREAK 1>NULL
+    TIMEOUT /T 5 /NOBREAK 1>NUL
 )
 SET status=NOT STARTED
 :print_and_exit
