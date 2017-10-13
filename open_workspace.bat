@@ -2,7 +2,7 @@
  
 REM To ask user if i want to start workspace
 CHOICE /M "Do you want to open workspace?" /t 10 /D y
-
+if %errorlevel%==2 exit /b 0
 REM To read txt file with spaces in name line by line
 FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
     REM Call label as function with read line as an argument
