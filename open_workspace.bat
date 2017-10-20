@@ -12,21 +12,37 @@ REM Go to end of file (exit batch file)
 GOTO :EOF
 :try_found_app_process
 REM If app argument is present
-IF [%2] == [] (
-    REM search launched app without argument
-    (TASKLIST | FIND /I "%~xn1" 1>NUL) && EXIT /B 0
+IF NOT [%3] == [""] (
+    IF [%~x1] == [.bat] (
+        REM search cmd.exe with window name
+        ((TASKLIST /V | FIND /I "cmd.exe") | FIND /I "%~4" 1>NUL) && EXIT /B 0
+    ) ELSE (
+        REM search launched app with window name
+        ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~4" 1>NUL) && EXIT /B 0
+    )
 ) ELSE (
-    REM search launched app with that argument
-    ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~n2" 1>NUL) && EXIT /B 0
+    IF [%~2] == [] (
+        REM search launched app without argument
+        (TASKLIST | FIND /I "%~xn1" 1>NUL) && EXIT /B 0
+    ) ELSE (
+        REM search launched app with that argument
+        ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~n2" 1>NUL) && EXIT /B 0
+    )
+    REM
 )
 EXIT /B 1
+
 :start_with_delay
 REM Clear status variable
 SET status=
 REM Try find running process before starting
 (CALL :try_found_app_process %*) && (SET status=FOUND& GOTO :print_and_exit)
 REM If app is not found, try start it (only one time)
-START "" %1 %2
+IF [%3] == [""] (
+    START %4 %1 %2
+) ELSE (
+    START %4 /D %3 %1 %~2
+)
 REM Do cycle delaying 3 times while app trying to start
 FOR /L %%i IN (1,1,3) DO (
     REM Try find starting process
@@ -37,7 +53,7 @@ FOR /L %%i IN (1,1,3) DO (
 SET status=NOT STARTED
 :print_and_exit
 REM Print status message
-IF [%2] == [] (
+IF [%~2] == [] (
     ECHO [%status%] %1
 ) ELSE (
     ECHO [%status%] %1 with %~xn2
