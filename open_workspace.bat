@@ -1,7 +1,7 @@
 @ECHO OFF
  
 REM To ask user if i want to start workspace
-CHOICE /M "Do you want to open workspace?" /t 10 /D y
+CHOICE /M "Do you want to open workspace?" /t 10 /D N
 if %errorlevel%==2 exit /b 0
 REM To read txt file with spaces in name line by line
 FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
@@ -12,7 +12,7 @@ REM Go to end of file (exit batch file)
 GOTO :EOF
 :try_found_app_process
 REM If app argument is present
-IF NOT [%3] == [""] (
+IF NOT [%4] == [""] (
     IF [%~x1] == [.bat] (
         REM search cmd.exe with window name
         ((TASKLIST /V | FIND /I "cmd.exe") | FIND /I "%~4" 1>NUL) && EXIT /B 0
@@ -31,7 +31,6 @@ IF NOT [%3] == [""] (
     REM
 )
 EXIT /B 1
-
 :start_with_delay
 REM Clear status variable
 SET status=

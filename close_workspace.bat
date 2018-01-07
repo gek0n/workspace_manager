@@ -1,7 +1,7 @@
 @ECHO OFF
 
 REM To ask if i want to close workspace
-CHOICE /M "Do you want to close workspace?" /t 5 /D y
+CHOICE /M "Do you want to close workspace?" /t 5 /D Y
 if %errorlevel%==2 exit /b 0
 REM To read txt file with spaces in name line by line
 FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
@@ -12,12 +12,23 @@ REM Go to end of file (exit batch file)
 GOTO :EOF
 :try_found_app_process
 REM If app argument is present
-IF [%2] == [] (
-    REM search launched app without argument
-    FOR /F "delims=" %%V in ('^(TASKLIST ^| FIND /I "%~xn1"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+IF NOT [%4] == [""] (
+    IF [%~x1] == [.bat] (
+        REM search cmd.exe with window name
+        FOR /F "delims=" %%V in ('^(^(TASKLIST /V ^| FIND /I "cmd.exe"^) ^| FIND /I "%~4"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+    ) ELSE (
+        REM search launched app with window name
+        FOR /F "delims=" %%V in ('^(^(TASKLIST /V ^| FIND /I "%~xn1"^) ^| FIND /I "%~4"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+    )
 ) ELSE (
-    REM search launched app with that argument
-    FOR /F "delims=" %%V in ('^(^(TASKLIST /V ^| FIND /I "%~xn1"^) ^| FIND /I "%~n2"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+    IF [%~2] == [] (
+        REM search launched app without argument
+        FOR /F "delims=" %%V in ('^(TASKLIST ^| FIND /I "%~xn1"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+    ) ELSE (
+        REM search launched app with that argument
+        FOR /F "delims=" %%V in ('^(^(TASKLIST /V ^| FIND /I "%~xn1"^) ^| FIND /I "%~n2"^)') DO (CALL :get_pid %%V && EXIT /B 0)
+    )
+    REM
 )
 REM The ^ character escaped other symbols in FOR argument, which placed inside single quotes
 EXIT /B 1
@@ -49,7 +60,7 @@ FOR /L %%i IN (1,1,3) DO (
 SET status=NOT STOPPED
 :print_and_exit
 REM Print status message
-IF [%2] == [] (
+IF [%~2] == [] (
     ECHO [%status%] %1
 ) ELSE (
     ECHO [%status%] %1 with %~xn2
