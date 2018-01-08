@@ -1,17 +1,27 @@
 @ECHO OFF
+CHCP 1251
 REM Add TRUE value in line below to enable PAUSE command after stop executing batch
 SET waitBeforeClose=
+REM Delete value in line below to turn off logging
+SET logFile="workspace.log"
+SET logging=^> tmp.out ^&^& TYPE tmp.out ^&^& TYPE tmp.out ^>^> %logFile%
+SET "LOG=CALL :log_proc "
+
 REM To ask user if i want to start workspace
 CHOICE /M "Do you want to open workspace?" /t 10 /D N
-if %errorlevel%==2 exit /b 0
+%LOG% "========================================================================="
+%LOG% "Open workspace on %DATE% at %TIME%"
+IF %errorlevel%==2 EXIT /B 0
 REM To read txt file with spaces in name line by line
 FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
     REM Call label as function with read line as an argument
     CALL :start_with_delay %%A 
 )
 IF DEFINED waitBeforeClose PAUSE
+%LOG% "========================================================================="
 REM Go to end of file (exit batch file)
 GOTO :EOF
+
 :try_found_app_process
 IF NOT ["%~4"] == [""] (
     REM Search with window name
@@ -34,6 +44,7 @@ IF NOT ["%~4"] == [""] (
     REM
 )
 EXIT /B 1
+
 :start_with_delay
 REM Clear status variable
 SET status=
@@ -61,12 +72,17 @@ SET status=NOT STARTED
 :print_and_exit
 REM Print status message
 IF [%~2] == [] (
-    ECHO [%status%] %1
+    %LOG% "[%status%] %~1"
 ) ELSE (
-    ECHO [%status%] %1 with %~xn2
+    %LOG% "[%status%] %~1 with %~xn2"
 )
 REM Exit from lable-like function
 EXIT /B
+
+:log_proc
+ECHO %~1 %logging%
+DEL /Q tmp.out
+EXIT /B 0
 
 REM Stolen from https://stackoverflow.com/questions/5534324/how-to-run-multiple-programs-using-batch-file
 REM @ECHO OFF
