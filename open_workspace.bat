@@ -1,5 +1,6 @@
 @ECHO OFF
- 
+REM Add TRUE value in line below to enable PAUSE command after stop executing batch
+SET waitBeforeClose=
 REM To ask user if i want to start workspace
 CHOICE /M "Do you want to open workspace?" /t 10 /D N
 if %errorlevel%==2 exit /b 0
@@ -8,11 +9,12 @@ FOR /F "tokens=*" %%A IN ('TYPE "%~dp0/workspace_list.txt"') DO (
     REM Call label as function with read line as an argument
     CALL :start_with_delay %%A 
 )
+IF DEFINED waitBeforeClose PAUSE
 REM Go to end of file (exit batch file)
 GOTO :EOF
 :try_found_app_process
-REM If app argument is present
-IF NOT [%4] == [""] (
+IF NOT ["%~4"] == [""] (
+    REM Search with window name
     IF [%~x1] == [.bat] (
         REM search cmd.exe with window name
         ((TASKLIST /V | FIND /I "cmd.exe") | FIND /I "%~4" 1>NUL) && EXIT /B 0
@@ -21,6 +23,7 @@ IF NOT [%4] == [""] (
         ((TASKLIST /V | FIND /I "%~xn1") | FIND /I "%~4" 1>NUL) && EXIT /B 0
     )
 ) ELSE (
+    REM Search without window name
     IF [%~2] == [] (
         REM search launched app without argument
         (TASKLIST | FIND /I "%~xn1" 1>NUL) && EXIT /B 0
@@ -37,9 +40,14 @@ SET status=
 REM Try find running process before starting
 (CALL :try_found_app_process %*) && (SET status=FOUND& GOTO :print_and_exit)
 REM If app is not found, try start it (only one time)
+REM Start app, if it`s path exists in PATH variable, 3 and 4 args not present
+IF [%3] == [] IF [%4] == [] %~1 %~2
+
 IF [%3] == [""] (
+    REM Start without working directory
     START %4 %1 %2
 ) ELSE (
+    REM Start with working directory
     START %4 /D %3 %1 %~2
 )
 REM Do cycle delaying 3 times while app trying to start
